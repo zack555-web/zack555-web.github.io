@@ -6,9 +6,7 @@
   <title>English Dashboard</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -36,8 +34,31 @@
     }
 
     .subtitle {
-      margin: 0 0 28px;
+      margin: 0 0 22px;
       color: #64748b;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 28px;
+    }
+
+    .filter-btn {
+      border: 1px solid #dbe2ea;
+      background: white;
+      color: #64748b;
+      padding: 9px 16px;
+      border-radius: 999px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .filter-btn.active {
+      background: #1f2937;
+      color: white;
+      border-color: #1f2937;
     }
 
     .main-grid,
@@ -111,6 +132,13 @@
     <h1>English Dashboard</h1>
     <p class="subtitle">English study progress</p>
 
+    <div class="filters">
+      <button class="filter-btn" data-period="today">Today</button>
+      <button class="filter-btn" data-period="week">This Week</button>
+      <button class="filter-btn active" data-period="month">This Month</button>
+      <button class="filter-btn" data-period="all">All Time</button>
+    </div>
+
     <div class="main-grid">
       <div class="card">
         <div class="label">Total Study Time</div>
@@ -157,6 +185,7 @@
 
   <script>
     const DATA_URL = "../../data/english-data.json";
+    let allRecords = [];
 
     function formatMinutes(minutes) {
       const hours = Math.floor(minutes / 60);
@@ -169,6 +198,109 @@
       return `${hours}<span class="unit">h</span> ${mins}<span class="unit">min</span>`;
     }
 
+    function getLocalDate(dateString) {
+      const [year, month, day] = dateString.split("-").map(Number);
+      return new Date(year, month - 1, day);
+    }
+
+    function filterRecords(period) {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+
+      return allRecords.filter(record => {
+        if (!record.date) return false;
+        if (period === "all") return true;
+
+        const recordDate = getLocalDate(record.date);
+        recordDate.setHours(0, 0, 0, 0);
+
+        if (period === "today") {
+          return recordDate.getTime() === now.getTime();
+        }
+
+        if (period === "week") {
+          const startOfWeek = new Date(now);
+          const day = startOfWeek.getDay();
+          const diff = day === 0 ? 6 : day - 1;
+
+          startOfWeek.setDate(startOfWeek.getDate() - diff);
+
+          return recordDate >= startOfWeek && recordDate <= now;
+        }
+
+        if (period === "month") {
+          return (
+            recordDate.getFullYear() === now.getFullYear() &&
+            recordDate.getMonth() === now.getMonth()
+          );
+        }
+
+        return true;
+      });
+    }
+
+    function updateDashboard(records) {
+      const totals = {
+        "Free Conversation": 0,
+        "Sentence Practice": 0,
+        "NativeCamp": 0,
+        "Listening": 0
+      };
+
+      records.forEach(record => {
+        const type = record.practiceType;
+        const duration = Number(record.duration) || 0;
+
+        if (Object.prototype.hasOwnProperty.call(totals, type)) {
+          totals[type] += duration;
+        }
+      });
+
+      const speaking =
+        totals["Free Conversation"] +
+        totals["Sentence Practice"] +
+        totals["NativeCamp"];
+
+      const listening = totals["Listening"];
+      const total = speaking + listening;
+
+      document.getElementById("total").innerHTML =
+        formatMinutes(total);
+
+      document.getElementById("speaking").innerHTML =
+        formatMinutes(speaking);
+
+      document.getElementById("listening").innerHTML =
+        formatMinutes(listening);
+
+      document.getElementById("free-conversation").innerHTML =
+        formatMinutes(totals["Free Conversation"]);
+
+      document.getElementById("sentence-practice").innerHTML =
+        formatMinutes(totals["Sentence Practice"]);
+
+      document.getElementById("nativecamp").innerHTML =
+        formatMinutes(totals["NativeCamp"]);
+
+      document.getElementById("listening-detail").innerHTML =
+        formatMinutes(totals["Listening"]);
+
+      document.getElementById("status").textContent =
+        `${records.length} study sessions`;
+    }
+
+    function selectPeriod(period) {
+      document.querySelectorAll(".filter-btn").forEach(button => {
+        button.classList.toggle(
+          "active",
+          button.dataset.period === period
+        );
+      });
+
+      const filteredRecords = filterRecords(period);
+      updateDashboard(filteredRecords);
+    }
+
     async function loadDashboard() {
       try {
         const response = await fetch(DATA_URL + "?t=" + Date.now());
@@ -178,55 +310,9 @@
         }
 
         const data = await response.json();
-        const records = data.records || [];
+        allRecords = data.records || [];
 
-        const totals = {
-          "Free Conversation": 0,
-          "Sentence Practice": 0,
-          "NativeCamp": 0,
-          "Listening": 0
-        };
-
-        records.forEach(record => {
-          const type = record.practiceType;
-          const duration = Number(record.duration) || 0;
-
-          if (Object.prototype.hasOwnProperty.call(totals, type)) {
-            totals[type] += duration;
-          }
-        });
-
-        const speaking =
-          totals["Free Conversation"] +
-          totals["Sentence Practice"] +
-          totals["NativeCamp"];
-
-        const listening = totals["Listening"];
-        const total = speaking + listening;
-
-        document.getElementById("total").innerHTML =
-          formatMinutes(total);
-
-        document.getElementById("speaking").innerHTML =
-          formatMinutes(speaking);
-
-        document.getElementById("listening").innerHTML =
-          formatMinutes(listening);
-
-        document.getElementById("free-conversation").innerHTML =
-          formatMinutes(totals["Free Conversation"]);
-
-        document.getElementById("sentence-practice").innerHTML =
-          formatMinutes(totals["Sentence Practice"]);
-
-        document.getElementById("nativecamp").innerHTML =
-          formatMinutes(totals["NativeCamp"]);
-
-        document.getElementById("listening-detail").innerHTML =
-          formatMinutes(totals["Listening"]);
-
-        document.getElementById("status").textContent =
-          `${data.recordCount || records.length} study sessions loaded`;
+        selectPeriod("month");
 
       } catch (error) {
         console.error(error);
@@ -235,6 +321,12 @@
           "Failed to load English study data.";
       }
     }
+
+    document.querySelectorAll(".filter-btn").forEach(button => {
+      button.addEventListener("click", () => {
+        selectPeriod(button.dataset.period);
+      });
+    });
 
     loadDashboard();
   </script>
