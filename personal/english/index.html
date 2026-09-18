@@ -106,6 +106,175 @@
       font-size: 20px;
     }
 
+    /* Monthly Goal */
+
+    .goal-card {
+      margin-bottom: 32px;
+    }
+
+    .goal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .goal-value {
+      font-size: 26px;
+      font-weight: 700;
+    }
+
+    .goal-percent {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 14px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background: #1f2937;
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+
+    .goal-note {
+      margin-top: 10px;
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    /* Weekly chart */
+
+    .chart-card {
+      margin-bottom: 32px;
+    }
+
+    .chart-legend {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .legend-box {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+
+    .legend-speaking {
+      background: #334155;
+    }
+
+    .legend-listening {
+      background: #94a3b8;
+    }
+
+    .legend-goal {
+      width: 18px;
+      height: 0;
+      border-top: 2px dashed #ef4444;
+    }
+
+    .chart-area {
+      position: relative;
+      height: 280px;
+      padding: 10px 0 30px;
+    }
+
+    .goal-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      border-top: 2px dashed #ef4444;
+      z-index: 1;
+    }
+
+    .goal-line-label {
+      position: absolute;
+      right: 0;
+      transform: translateY(-22px);
+      font-size: 11px;
+      color: #ef4444;
+      background: white;
+      padding-left: 5px;
+    }
+
+    .bars {
+      position: absolute;
+      inset: 10px 0 30px;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 14px;
+      align-items: end;
+      z-index: 2;
+    }
+
+    .day-column {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      position: relative;
+    }
+
+    .bar-total {
+      width: min(54px, 70%);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      border-radius: 6px 6px 2px 2px;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .bar-speaking {
+      background: #334155;
+      width: 100%;
+    }
+
+    .bar-listening {
+      background: #94a3b8;
+      width: 100%;
+    }
+
+    .bar-value {
+      position: absolute;
+      font-size: 11px;
+      color: #64748b;
+      white-space: nowrap;
+    }
+
+    .day-label {
+      position: absolute;
+      bottom: -24px;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .today-label {
+      color: #1f2937;
+      font-weight: 700;
+    }
+
     #status {
       margin-top: 24px;
       color: #64748b;
@@ -120,6 +289,19 @@
 
       main {
         padding: 24px 16px 40px;
+      }
+
+      .chart-area {
+        height: 240px;
+      }
+
+      .bars {
+        gap: 6px;
+      }
+
+      .goal-header {
+        align-items: flex-start;
+        flex-direction: column;
       }
     }
   </style>
@@ -156,6 +338,54 @@
       </div>
     </div>
 
+    <h2>Monthly Goal</h2>
+
+    <div class="card goal-card">
+      <div class="goal-header">
+        <div>
+          <div class="label">Study Time / Goal</div>
+          <div class="goal-value" id="monthly-goal-value">--</div>
+        </div>
+
+        <div class="goal-percent" id="monthly-goal-percent">--</div>
+      </div>
+
+      <div class="progress-track">
+        <div class="progress-bar" id="monthly-progress"></div>
+      </div>
+
+      <div class="goal-note" id="monthly-goal-note"></div>
+    </div>
+
+    <h2>Weekly Study Time</h2>
+
+    <div class="card chart-card">
+      <div class="chart-legend">
+        <div class="legend-item">
+          <span class="legend-box legend-speaking"></span>
+          Speaking
+        </div>
+
+        <div class="legend-item">
+          <span class="legend-box legend-listening"></span>
+          Listening
+        </div>
+
+        <div class="legend-item">
+          <span class="legend-goal"></span>
+          Daily Goal 120 min
+        </div>
+      </div>
+
+      <div class="chart-area" id="chart-area">
+        <div class="goal-line" id="goal-line">
+          <span class="goal-line-label">120 min</span>
+        </div>
+
+        <div class="bars" id="weekly-bars"></div>
+      </div>
+    </div>
+
     <h2>Practice Type</h2>
 
     <div class="detail-grid">
@@ -185,6 +415,8 @@
 
   <script>
     const DATA_URL = "../../data/english-data.json";
+    const DAILY_GOAL_MINUTES = 120;
+
     let allRecords = [];
 
     function formatMinutes(minutes) {
@@ -198,9 +430,39 @@
       return `${hours}<span class="unit">h</span> ${mins}<span class="unit">min</span>`;
     }
 
+    function formatPlainMinutes(minutes) {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+
+      if (hours === 0) return `${mins} min`;
+      if (mins === 0) return `${hours} h`;
+
+      return `${hours} h ${mins} min`;
+    }
+
+    function dateKey(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+    }
+
     function getLocalDate(dateString) {
       const [year, month, day] = dateString.split("-").map(Number);
       return new Date(year, month - 1, day);
+    }
+
+    function getStartOfWeek(date) {
+      const start = new Date(date);
+      start.setHours(0, 0, 0, 0);
+
+      const day = start.getDay();
+      const diff = day === 0 ? 6 : day - 1;
+
+      start.setDate(start.getDate() - diff);
+
+      return start;
     }
 
     function filterRecords(period) {
@@ -219,11 +481,7 @@
         }
 
         if (period === "week") {
-          const startOfWeek = new Date(now);
-          const day = startOfWeek.getDay();
-          const diff = day === 0 ? 6 : day - 1;
-
-          startOfWeek.setDate(startOfWeek.getDate() - diff);
+          const startOfWeek = getStartOfWeek(now);
 
           return recordDate >= startOfWeek && recordDate <= now;
         }
@@ -289,6 +547,185 @@
         `${records.length} study sessions`;
     }
 
+    function updateMonthlyGoal() {
+      const now = new Date();
+
+      const year = now.getFullYear();
+      const month = now.getMonth();
+
+      const daysInMonth =
+        new Date(year, month + 1, 0).getDate();
+
+      const monthlyGoalMinutes =
+        daysInMonth * DAILY_GOAL_MINUTES;
+
+      const monthlyRecords = allRecords.filter(record => {
+        if (!record.date) return false;
+
+        const date = getLocalDate(record.date);
+
+        return (
+          date.getFullYear() === year &&
+          date.getMonth() === month
+        );
+      });
+
+      const studiedMinutes = monthlyRecords.reduce(
+        (sum, record) => sum + (Number(record.duration) || 0),
+        0
+      );
+
+      const percentage =
+        monthlyGoalMinutes > 0
+          ? (studiedMinutes / monthlyGoalMinutes) * 100
+          : 0;
+
+      document.getElementById("monthly-goal-value").textContent =
+        `${formatPlainMinutes(studiedMinutes)} / ${formatPlainMinutes(monthlyGoalMinutes)}`;
+
+      document.getElementById("monthly-goal-percent").textContent =
+        `${percentage.toFixed(1)}%`;
+
+      document.getElementById("monthly-progress").style.width =
+        `${Math.min(percentage, 100)}%`;
+
+      document.getElementById("monthly-goal-note").textContent =
+        `${daysInMonth} days × 2 hours = ${formatPlainMinutes(monthlyGoalMinutes)} monthly goal`;
+    }
+
+    function updateWeeklyChart() {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+
+      const startOfWeek = getStartOfWeek(now);
+
+      const days = [];
+
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(startOfWeek);
+        date.setDate(startOfWeek.getDate() + i);
+
+        days.push({
+          date,
+          key: dateKey(date),
+          speaking: 0,
+          listening: 0
+        });
+      }
+
+      allRecords.forEach(record => {
+        if (!record.date) return;
+
+        const day = days.find(item => item.key === record.date);
+
+        if (!day) return;
+
+        const duration = Number(record.duration) || 0;
+
+        if (
+          record.practiceType === "Free Conversation" ||
+          record.practiceType === "Sentence Practice" ||
+          record.practiceType === "NativeCamp"
+        ) {
+          day.speaking += duration;
+        }
+
+        if (record.practiceType === "Listening") {
+          day.listening += duration;
+        }
+      });
+
+      const totals = days.map(day =>
+        day.speaking + day.listening
+      );
+
+      const maxMinutes = Math.max(
+        DAILY_GOAL_MINUTES,
+        ...totals,
+        1
+      );
+
+      const chartMax = Math.ceil(maxMinutes / 30) * 30;
+
+      const bars = document.getElementById("weekly-bars");
+      bars.innerHTML = "";
+
+      const labels =
+        ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+      days.forEach((day, index) => {
+        const total = day.speaking + day.listening;
+
+        const totalHeight =
+          (total / chartMax) * 100;
+
+        const speakingHeight =
+          total > 0
+            ? (day.speaking / total) * 100
+            : 0;
+
+        const listeningHeight =
+          total > 0
+            ? (day.listening / total) * 100
+            : 0;
+
+        const column = document.createElement("div");
+        column.className = "day-column";
+
+        const value = document.createElement("div");
+        value.className = "bar-value";
+        value.style.bottom =
+          `calc(${totalHeight}% + 6px)`;
+        value.textContent =
+          total > 0 ? `${total}m` : "";
+
+        const bar = document.createElement("div");
+        bar.className = "bar-total";
+        bar.style.height = `${totalHeight}%`;
+
+        const speaking = document.createElement("div");
+        speaking.className = "bar-speaking";
+        speaking.style.height = `${speakingHeight}%`;
+        speaking.title = `Speaking: ${day.speaking} min`;
+
+        const listening = document.createElement("div");
+        listening.className = "bar-listening";
+        listening.style.height = `${listeningHeight}%`;
+        listening.title = `Listening: ${day.listening} min`;
+
+        /*
+          Flex direction is column.
+          Speaking is inserted first, so it appears on top.
+          Listening is inserted second, so it appears below.
+        */
+        bar.appendChild(speaking);
+        bar.appendChild(listening);
+
+        const label = document.createElement("div");
+        label.className = "day-label";
+        label.textContent = labels[index];
+
+        if (day.key === dateKey(now)) {
+          label.classList.add("today-label");
+        }
+
+        column.appendChild(value);
+        column.appendChild(bar);
+        column.appendChild(label);
+
+        bars.appendChild(column);
+      });
+
+      const goalPosition =
+        (DAILY_GOAL_MINUTES / chartMax) * 100;
+
+      const goalLine =
+        document.getElementById("goal-line");
+
+      goalLine.style.bottom =
+        `calc(30px + ${(goalPosition * 2.4)}px)`;
+    }
+
     function selectPeriod(period) {
       document.querySelectorAll(".filter-btn").forEach(button => {
         button.classList.toggle(
@@ -298,21 +735,26 @@
       });
 
       const filteredRecords = filterRecords(period);
+
       updateDashboard(filteredRecords);
     }
 
     async function loadDashboard() {
       try {
-        const response = await fetch(DATA_URL + "?t=" + Date.now());
+        const response =
+          await fetch(DATA_URL + "?t=" + Date.now());
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
 
         const data = await response.json();
+
         allRecords = data.records || [];
 
         selectPeriod("month");
+        updateMonthlyGoal();
+        updateWeeklyChart();
 
       } catch (error) {
         console.error(error);
