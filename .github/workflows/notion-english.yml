@@ -14,7 +14,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Fetch Notion data
+      - name: Fetch and format Notion data
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           DATA_SOURCE_ID: ${{ vars.NOTION_DATA_SOURCE_ID }}
@@ -25,6 +25,7 @@ jobs:
           import json
           import os
           import urllib.request
+          from datetime import datetime
 
           token = os.environ["NOTION_TOKEN"]
           data_source_id = os.environ["DATA_SOURCE_ID"]
@@ -37,7 +38,7 @@ jobs:
               "Content-Type": "application/json",
           }
 
-          results = []
+          raw_records = []
           cursor = None
 
           while True:
@@ -56,22 +57,70 @@ jobs:
               with urllib.request.urlopen(request) as response:
                   payload = json.load(response)
 
-              results.extend(payload.get("results", []))
+              raw_records.extend(payload.get("results", []))
 
               if not payload.get("has_more"):
                   break
 
               cursor = payload.get("next_cursor")
 
+          def get_title(prop):
+              items = prop.get("title", [])
+              return "".join(x.get("plain_text", "") for x in items)
+
+          def get_select(prop):
+              value = prop.get("select")
+              return value.get("name") if value else None
+
+          def get_date(prop):
+              value = prop.get("date")
+              return value.get("start") if value else None
+
+          def calculate_duration(start, end):
+              if not start or not end:
+                  return 0
+
+              try:
+                  start_dt = datetime.fromisoformat(start.replace("Z", "+00:00"))
+                  end_dt = datetime.fromisoformat(end.replace("Z", "+00:00"))
+                  return max(0, round((end_dt - start_dt).total_seconds() / 60))
+              except Exception:
+                  return 0
+
+          records = []
+
+          for page in raw_records:
+              props = page.get("properties", {})
+
+              session = get_title(props.get("Session", {}))
+              practice_type = get_select(props.get("Practice Type", {}))
+              date = get_date(props.get("Date", {}))
+              start_time = get_date(props.get("Start Time", {}))
+              end_time = get_date(props.get("End Time", {}))
+
+              duration = calculate_duration(start_time, end_time)
+
+              if date:
+                  date = date[:10]
+
+              records.append({
+                  "date": date,
+                  "practiceType": practice_type,
+                  "duration": duration,
+                  "session": session
+              })
+
+          records.sort(key=lambda x: x.get("date") or "")
+
           output = {
-              "recordCount": len(results),
-              "records": results
+              "recordCount": len(records),
+              "records": records
           }
 
           with open("data/english-data.json", "w", encoding="utf-8") as f:
               json.dump(output, f, ensure_ascii=False, indent=2)
 
-          print(f"Fetched {len(results)} English study records.")
+          print(f"Formatted {len(records)} English study records.")
           PY
 
       - name: Commit English data
