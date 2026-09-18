@@ -1,14 +1,242 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>English</title>
-<style>body{margin:0;background:#f5f7fa;color:#1f2937;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:1000px;margin:auto;padding:40px 20px}h1{margin-bottom:8px}p{color:#6b7280;line-height:1.7}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;margin-top:30px}.card{background:white;border-radius:16px;padding:24px;box-shadow:0 4px 15px #0000000f}a{color:#2563eb}a:focus-visible{outline:3px solid #2563eb;outline-offset:5px}h2{font-size:20px}</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>English Dashboard</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #f5f7fa;
+      color: #1f2937;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+    }
+
+    .back {
+      display: inline-block;
+      margin-bottom: 24px;
+      color: #64748b;
+      text-decoration: none;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 32px;
+    }
+
+    .subtitle {
+      margin: 0 0 28px;
+      color: #64748b;
+    }
+
+    .main-grid,
+    .detail-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .main-grid {
+      grid-template-columns: repeat(3, 1fr);
+      margin-bottom: 32px;
+    }
+
+    .detail-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+
+    .label {
+      color: #64748b;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .value {
+      font-size: 32px;
+      font-weight: 700;
+    }
+
+    .unit {
+      font-size: 15px;
+      font-weight: 400;
+      color: #64748b;
+      margin-left: 4px;
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: 20px;
+    }
+
+    #status {
+      margin-top: 24px;
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    @media (max-width: 760px) {
+      .main-grid,
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+
+      main {
+        padding: 24px 16px 40px;
+      }
+    }
+  </style>
 </head>
-<body><main>
-<a href="../index.html">← Personal Dashboard</a>
-<h1>English</h1>
-<p>英語学習のダッシュボードは準備中です。</p>
-</main></body>
+
+<body>
+  <main>
+    <a class="back" href="../index.html">← Personal Dashboard</a>
+
+    <h1>English Dashboard</h1>
+    <p class="subtitle">English study progress</p>
+
+    <div class="main-grid">
+      <div class="card">
+        <div class="label">Total Study Time</div>
+        <div class="value" id="total">--</div>
+      </div>
+
+      <div class="card">
+        <div class="label">Speaking</div>
+        <div class="value" id="speaking">--</div>
+      </div>
+
+      <div class="card">
+        <div class="label">Listening</div>
+        <div class="value" id="listening">--</div>
+      </div>
+    </div>
+
+    <h2>Practice Type</h2>
+
+    <div class="detail-grid">
+      <div class="card">
+        <div class="label">Free Conversation</div>
+        <div class="value" id="free-conversation">--</div>
+      </div>
+
+      <div class="card">
+        <div class="label">Sentence Practice</div>
+        <div class="value" id="sentence-practice">--</div>
+      </div>
+
+      <div class="card">
+        <div class="label">NativeCamp</div>
+        <div class="value" id="nativecamp">--</div>
+      </div>
+
+      <div class="card">
+        <div class="label">Listening</div>
+        <div class="value" id="listening-detail">--</div>
+      </div>
+    </div>
+
+    <div id="status">Loading data...</div>
+  </main>
+
+  <script>
+    const DATA_URL = "../../data/english-data.json";
+
+    function formatMinutes(minutes) {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+
+      if (hours === 0) {
+        return `${mins}<span class="unit">min</span>`;
+      }
+
+      return `${hours}<span class="unit">h</span> ${mins}<span class="unit">min</span>`;
+    }
+
+    async function loadDashboard() {
+      try {
+        const response = await fetch(DATA_URL + "?t=" + Date.now());
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        const records = data.records || [];
+
+        const totals = {
+          "Free Conversation": 0,
+          "Sentence Practice": 0,
+          "NativeCamp": 0,
+          "Listening": 0
+        };
+
+        records.forEach(record => {
+          const type = record.practiceType;
+          const duration = Number(record.duration) || 0;
+
+          if (Object.prototype.hasOwnProperty.call(totals, type)) {
+            totals[type] += duration;
+          }
+        });
+
+        const speaking =
+          totals["Free Conversation"] +
+          totals["Sentence Practice"] +
+          totals["NativeCamp"];
+
+        const listening = totals["Listening"];
+        const total = speaking + listening;
+
+        document.getElementById("total").innerHTML =
+          formatMinutes(total);
+
+        document.getElementById("speaking").innerHTML =
+          formatMinutes(speaking);
+
+        document.getElementById("listening").innerHTML =
+          formatMinutes(listening);
+
+        document.getElementById("free-conversation").innerHTML =
+          formatMinutes(totals["Free Conversation"]);
+
+        document.getElementById("sentence-practice").innerHTML =
+          formatMinutes(totals["Sentence Practice"]);
+
+        document.getElementById("nativecamp").innerHTML =
+          formatMinutes(totals["NativeCamp"]);
+
+        document.getElementById("listening-detail").innerHTML =
+          formatMinutes(totals["Listening"]);
+
+        document.getElementById("status").textContent =
+          `${data.recordCount || records.length} study sessions loaded`;
+
+      } catch (error) {
+        console.error(error);
+
+        document.getElementById("status").textContent =
+          "Failed to load English study data.";
+      }
+    }
+
+    loadDashboard();
+  </script>
+</body>
 </html>
