@@ -1,5 +1,5 @@
 {
-  "recordCount": 30,
+  "recordCount": 33,
   "records": [
     {
       "date": "2026-09-13",
@@ -171,6 +171,18 @@
     },
     {
       "date": "2026-09-20",
+      "practiceType": "Listening",
+      "duration": 19,
+      "session": "2026-09-20 - Listening"
+    },
+    {
+      "date": "2026-09-20",
+      "practiceType": "Listening",
+      "duration": 16,
+      "session": "2026-09-20 - Listening"
+    },
+    {
+      "date": "2026-09-20",
       "practiceType": "Sentence Practice",
       "duration": 16,
       "session": "2026-09-20 - Sentence Practice"
@@ -180,6 +192,12 @@
       "practiceType": "Sentence Practice",
       "duration": 23,
       "session": "2026-09-20 - Sentence Practice"
+    },
+    {
+      "date": "2026-09-21",
+      "practiceType": "Sentence Practice",
+      "duration": 26,
+      "session": "2026-09-21 - Sentence Practice"
     }
   ]
 }
