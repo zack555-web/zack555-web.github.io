@@ -3,7 +3,7 @@ name: Update English Data
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 3 * * *"
+    - cron: "30 4 * * *"
 
 permissions:
   contents: write
