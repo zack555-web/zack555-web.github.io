@@ -1,0 +1,122 @@
+name: Update Health Data
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 4 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  update-health-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch and format Notion data
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          DATA_SOURCE_ID: ${{ vars.NOTION_HEALTH_DATA_SOURCE_ID }}
+        run: |
+          mkdir -p data
+
+          python3 <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          token = os.environ["NOTION_TOKEN"]
+          data_source_id = os.environ["DATA_SOURCE_ID"]
+
+          url = f"https://api.notion.com/v1/data_sources/{data_source_id}/query"
+
+          headers = {
+              "Authorization": f"Bearer {token}",
+              "Notion-Version": "2025-09-03",
+              "Content-Type": "application/json",
+          }
+
+          raw_records = []
+          cursor = None
+
+          while True:
+              body = {"page_size": 100}
+
+              if cursor:
+                  body["start_cursor"] = cursor
+
+              request = urllib.request.Request(
+                  url,
+                  data=json.dumps(body).encode("utf-8"),
+                  headers=headers,
+                  method="POST",
+              )
+
+              with urllib.request.urlopen(request) as response:
+                  payload = json.load(response)
+
+              raw_records.extend(payload.get("results", []))
+
+              if not payload.get("has_more"):
+                  break
+
+              cursor = payload.get("next_cursor")
+
+          def get_number(prop):
+              return prop.get("number")
+
+          def get_date(prop):
+              value = prop.get("date")
+              return value.get("start") if value else None
+
+          records = []
+
+          for page in raw_records:
+              props = page.get("properties", {})
+
+              date = get_date(props.get("Measured Date", {}))
+              weight = get_number(props.get("Weight (kg)", {}))
+              body_fat = get_number(props.get("Body Fat (%)", {}))
+              bmi = get_number(props.get("BMI", {}))
+              lbm = get_number(props.get("LBM (kg)", {}))
+
+              if date:
+                  date = date[:10]
+
+              records.append({
+                  "date": date,
+                  "weight": weight,
+                  "bodyFat": body_fat,
+                  "bmi": bmi,
+                  "lbm": lbm
+              })
+
+          records.sort(key=lambda x: x.get("date") or "")
+
+          output = {
+              "recordCount": len(records),
+              "records": records
+          }
+
+          with open("data/health-data.json", "w", encoding="utf-8") as f:
+              json.dump(output, f, ensure_ascii=False, indent=2)
+
+          print(f"Formatted {len(records)} health records.")
+          PY
+
+      - name: Commit Health data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add data/health-data.json
+
+          if git diff --cached --quiet; then
+            echo "No data changes."
+          else
+            git commit -m "Update Health data"
+            git push
+          fi
