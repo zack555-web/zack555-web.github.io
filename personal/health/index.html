@@ -89,21 +89,57 @@
       margin-top: 18px;
     }
 
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+
     .chart-title {
       font-size: 16px;
       font-weight: 600;
-      margin-bottom: 20px;
+    }
+
+    .legend {
+      display: flex;
+      gap: 18px;
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-bar {
+      width: 12px;
+      height: 12px;
+      background: #d1d5db;
+      border-radius: 2px;
+    }
+
+    .legend-line {
+      width: 18px;
+      height: 0;
+      border-top: 3px solid #374151;
     }
 
     .chart-wrapper {
       position: relative;
       width: 100%;
-      height: 260px;
+      height: 330px;
+      overflow-x: auto;
     }
 
     svg {
       width: 100%;
       height: 100%;
+      min-width: 700px;
       overflow: visible;
     }
 
@@ -117,7 +153,11 @@
       font-size: 11px;
     }
 
-    .line {
+    .weight-bar {
+      fill: #d1d5db;
+    }
+
+    .bodyfat-line {
       fill: none;
       stroke: #374151;
       stroke-width: 2.5;
@@ -125,7 +165,7 @@
       stroke-linejoin: round;
     }
 
-    .point {
+    .bodyfat-point {
       fill: white;
       stroke: #374151;
       stroke-width: 2;
@@ -136,11 +176,11 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 200px;
+      height: 250px;
     }
 
     .error {
-      background: #fff;
+      background: white;
       padding: 20px;
       border-radius: 16px;
       color: #b91c1c;
@@ -159,6 +199,10 @@
 
       .value {
         font-size: 26px;
+      }
+
+      .chart-wrapper {
+        height: 300px;
       }
     }
   </style>
@@ -252,6 +296,7 @@
   <!-- Monthly Activity -->
 
   <div class="section">
+
     <h2>Monthly Activity</h2>
 
     <div class="section-subtitle" id="month-label">
@@ -259,16 +304,38 @@
     </div>
 
     <div class="chart-card">
-      <div class="chart-title">Weight</div>
-      <div class="chart-wrapper" id="weight-chart"></div>
-    </div>
 
-    <div class="chart-card">
-      <div class="chart-title">Body Fat</div>
-      <div class="chart-wrapper" id="bodyfat-chart"></div>
+      <div class="chart-header">
+
+        <div class="chart-title">
+          Weight & Body Fat
+        </div>
+
+        <div class="legend">
+
+          <div class="legend-item">
+            <span class="legend-bar"></span>
+            Weight
+          </div>
+
+          <div class="legend-item">
+            <span class="legend-line"></span>
+            Body Fat
+          </div>
+
+        </div>
+
+      </div>
+
+      <div
+        class="chart-wrapper"
+        id="monthly-chart">
+      </div>
+
     </div>
 
   </div>
+
 
   <div class="error" id="error-message">
     Unable to load health data.
@@ -279,343 +346,508 @@
 
 <script>
 
-  const DATA_URL = '../../data/health-data.json';
-
-  function validNumber(value) {
-    return typeof value === 'number' && Number.isFinite(value);
-  }
+const DATA_URL = '../../data/health-data.json';
 
 
-  function formatDate(dateString) {
-    if (!dateString) return '---';
-
-    const [year, month, day] = dateString.split('-');
-
-    return `${year}/${month}/${day}`;
-  }
+function validNumber(value) {
+  return typeof value === 'number' &&
+         Number.isFinite(value);
+}
 
 
-  function createLineChart(containerId, records, dataKey, suffix) {
+function formatDate(dateString) {
 
-    const container = document.getElementById(containerId);
+  if (!dateString) return '---';
 
-    const data = records.filter(record =>
-      record.date && validNumber(record[dataKey])
+  const [year, month, day] =
+    dateString.split('-');
+
+  return `${year}/${month}/${day}`;
+}
+
+
+
+function createCombinedChart(records) {
+
+  const container =
+    document.getElementById('monthly-chart');
+
+
+  const data =
+    records.filter(record =>
+      record.date &&
+      validNumber(record.weight) &&
+      validNumber(record.bodyFat)
     );
 
-    if (!data.length) {
-      container.innerHTML =
-        '<div class="empty">No data for this month</div>';
-      return;
-    }
+
+  if (!data.length) {
+
+    container.innerHTML =
+      '<div class="empty">No data for this month</div>';
+
+    return;
+  }
 
 
-    const width = 900;
-    const height = 240;
+  const width = 950;
+  const height = 300;
 
-    const padding = {
-      top: 20,
-      right: 25,
-      bottom: 35,
-      left: 55
-    };
-
-
-    const values = data.map(record => record[dataKey]);
-
-    let minValue = Math.min(...values);
-    let maxValue = Math.max(...values);
-
-    let range = maxValue - minValue;
-
-    if (range === 0) {
-      range = 1;
-    }
-
-    const margin = Math.max(range * 0.25, dataKey === 'weight' ? 0.5 : 0.3);
-
-    minValue -= margin;
-    maxValue += margin;
+  const padding = {
+    top: 25,
+    right: 65,
+    bottom: 40,
+    left: 65
+  };
 
 
-    const chartWidth =
-      width - padding.left - padding.right;
+  const chartWidth =
+    width - padding.left - padding.right;
 
-    const chartHeight =
-      height - padding.top - padding.bottom;
-
-
-    const daysInMonth =
-      new Date(
-        Number(data[0].date.slice(0,4)),
-        Number(data[0].date.slice(5,7)),
-        0
-      ).getDate();
+  const chartHeight =
+    height - padding.top - padding.bottom;
 
 
-    function xPosition(dateString) {
+  const weights =
+    data.map(record => record.weight);
 
-      const day =
-        Number(dateString.slice(8,10));
-
-      return padding.left +
-        ((day - 1) / Math.max(daysInMonth - 1, 1)) *
-        chartWidth;
-    }
+  const bodyFats =
+    data.map(record => record.bodyFat);
 
 
-    function yPosition(value) {
+  /*
+   * Weight scale
+   */
 
-      return padding.top +
-        (1 - (value - minValue) /
-        (maxValue - minValue)) *
-        chartHeight;
-    }
+  let weightMin = Math.min(...weights);
+  let weightMax = Math.max(...weights);
 
+  let weightRange =
+    weightMax - weightMin;
 
-    const points = data.map(record => ({
-      x: xPosition(record.date),
-      y: yPosition(record[dataKey]),
-      value: record[dataKey],
-      day: Number(record.date.slice(8,10))
-    }));
+  if (weightRange === 0) {
+    weightRange = 1;
+  }
 
+  const weightMargin =
+    Math.max(weightRange * 0.3, 0.5);
 
-    const polylinePoints =
-      points.map(point =>
-        `${point.x},${point.y}`
-      ).join(' ');
+  weightMin -= weightMargin;
+  weightMax += weightMargin;
 
 
-    let svg = `
-      <svg viewBox="0 0 ${width} ${height}"
-           preserveAspectRatio="none">
+  /*
+   * Body Fat scale
+   */
+
+  let fatMin = Math.min(...bodyFats);
+  let fatMax = Math.max(...bodyFats);
+
+  let fatRange =
+    fatMax - fatMin;
+
+  if (fatRange === 0) {
+    fatRange = 1;
+  }
+
+  const fatMargin =
+    Math.max(fatRange * 0.3, 0.3);
+
+  fatMin -= fatMargin;
+  fatMax += fatMargin;
+
+
+  const firstDate = data[0].date;
+
+  const year =
+    Number(firstDate.slice(0,4));
+
+  const month =
+    Number(firstDate.slice(5,7));
+
+
+  const daysInMonth =
+    new Date(year, month, 0).getDate();
+
+
+  function xPosition(day) {
+
+    return padding.left +
+      ((day - 1) /
+      Math.max(daysInMonth - 1, 1)) *
+      chartWidth;
+  }
+
+
+  function weightY(value) {
+
+    return padding.top +
+      (1 -
+      (value - weightMin) /
+      (weightMax - weightMin)) *
+      chartHeight;
+  }
+
+
+  function fatY(value) {
+
+    return padding.top +
+      (1 -
+      (value - fatMin) /
+      (fatMax - fatMin)) *
+      chartHeight;
+  }
+
+
+  let svg = `
+    <svg
+      viewBox="0 0 ${width} ${height}"
+      preserveAspectRatio="none">
+  `;
+
+
+  /*
+   * Grid + left/right Y axes
+   */
+
+  const gridCount = 4;
+
+
+  for (let i = 0; i <= gridCount; i++) {
+
+    const y =
+      padding.top +
+      (chartHeight / gridCount) * i;
+
+
+    const weightValue =
+      weightMax -
+      ((weightMax - weightMin) /
+      gridCount) * i;
+
+
+    const fatValue =
+      fatMax -
+      ((fatMax - fatMin) /
+      gridCount) * i;
+
+
+    svg += `
+
+      <line
+        x1="${padding.left}"
+        y1="${y}"
+        x2="${width - padding.right}"
+        y2="${y}"
+        class="grid-line"
+      />
+
+      <text
+        x="${padding.left - 10}"
+        y="${y + 4}"
+        text-anchor="end"
+        class="axis-text"
+      >
+        ${weightValue.toFixed(1)} kg
+      </text>
+
+      <text
+        x="${width - padding.right + 10}"
+        y="${y + 4}"
+        text-anchor="start"
+        class="axis-text"
+      >
+        ${fatValue.toFixed(1)}%
+      </text>
+
     `;
+  }
 
 
-    const gridCount = 4;
+  /*
+   * X axis labels
+   */
 
-    for (let i = 0; i <= gridCount; i++) {
-
-      const y =
-        padding.top +
-        (chartHeight / gridCount) * i;
-
-      const value =
-        maxValue -
-        ((maxValue - minValue) /
-        gridCount) * i;
-
-      svg += `
-        <line
-          x1="${padding.left}"
-          y1="${y}"
-          x2="${width - padding.right}"
-          y2="${y}"
-          class="grid-line"
-        />
-
-        <text
-          x="${padding.left - 10}"
-          y="${y + 4}"
-          text-anchor="end"
-          class="axis-text"
-        >
-          ${value.toFixed(1)}${suffix}
-        </text>
-      `;
-    }
-
-
-    const xLabels = [1, 5, 10, 15, 20, 25, daysInMonth]
+  const xLabels =
+    [1, 5, 10, 15, 20, 25, daysInMonth]
       .filter((day, index, array) =>
         day <= daysInMonth &&
         array.indexOf(day) === index
       );
 
 
-    xLabels.forEach(day => {
+  xLabels.forEach(day => {
 
-      const x =
-        padding.left +
-        ((day - 1) /
-        Math.max(daysInMonth - 1, 1)) *
-        chartWidth;
+    const x = xPosition(day);
 
-      svg += `
-        <text
-          x="${x}"
-          y="${height - 10}"
-          text-anchor="middle"
-          class="axis-text"
-        >
-          ${day}
-        </text>
-      `;
-    });
+    svg += `
+
+      <text
+        x="${x}"
+        y="${height - 10}"
+        text-anchor="middle"
+        class="axis-text"
+      >
+        ${day}
+      </text>
+
+    `;
+  });
+
+
+  /*
+   * Weight bars
+   */
+
+  const barWidth =
+    Math.max(
+      8,
+      Math.min(
+        22,
+        chartWidth /
+        Math.max(daysInMonth, 1) * 0.65
+      )
+    );
+
+
+  data.forEach(record => {
+
+    const day =
+      Number(record.date.slice(8,10));
+
+    const x =
+      xPosition(day);
+
+    const y =
+      weightY(record.weight);
+
+    const bottom =
+      padding.top + chartHeight;
+
+    const barHeight =
+      bottom - y;
 
 
     svg += `
-      <polyline
-        points="${polylinePoints}"
-        class="line"
-      />
+
+      <rect
+        x="${x - barWidth / 2}"
+        y="${y}"
+        width="${barWidth}"
+        height="${barHeight}"
+        rx="3"
+        class="weight-bar"
+      >
+        <title>
+          ${record.date}
+          Weight: ${record.weight.toFixed(1)} kg
+        </title>
+      </rect>
+
     `;
+  });
 
 
-    points.forEach(point => {
+  /*
+   * Body Fat line
+   */
 
-      svg += `
-        <circle
-          cx="${point.x}"
-          cy="${point.y}"
-          r="4"
-          class="point"
-        >
-          <title>
-            Day ${point.day}: ${point.value}${suffix}
-          </title>
-        </circle>
-      `;
+  const fatPoints =
+    data.map(record => {
+
+      const day =
+        Number(record.date.slice(8,10));
+
+      return {
+        x: xPosition(day),
+        y: fatY(record.bodyFat),
+        value: record.bodyFat,
+        date: record.date
+      };
+
     });
 
 
-    svg += '</svg>';
-
-    container.innerHTML = svg;
-  }
-
-
-
-  fetch(DATA_URL, { cache: 'no-store' })
-
-    .then(response => {
-
-      if (!response.ok) {
-        throw new Error('Unable to load health data');
-      }
-
-      return response.json();
-    })
+  const polylinePoints =
+    fatPoints
+      .map(point =>
+        `${point.x},${point.y}`
+      )
+      .join(' ');
 
 
-    .then(data => {
+  svg += `
 
-      if (!Array.isArray(data.records) ||
-          data.records.length === 0) {
+    <polyline
+      points="${polylinePoints}"
+      class="bodyfat-line"
+    />
 
-        throw new Error('No health records');
-      }
-
-
-      const records =
-        data.records
-          .filter(record => record.date)
-          .sort((a, b) =>
-            a.date.localeCompare(b.date)
-          );
+  `;
 
 
-      /*
-       * Latest Body Record
-       */
+  fatPoints.forEach(point => {
 
-      const latest = records[records.length - 1];
+    svg += `
 
+      <circle
+        cx="${point.x}"
+        cy="${point.y}"
+        r="4"
+        class="bodyfat-point"
+      >
+        <title>
+          ${point.date}
+          Body Fat: ${point.value.toFixed(1)}%
+        </title>
+      </circle>
 
-      document.getElementById('weight').textContent =
-        validNumber(latest.weight)
-          ? `${latest.weight.toFixed(1)} kg`
-          : '---';
-
-
-      document.getElementById('body-fat').textContent =
-        validNumber(latest.bodyFat)
-          ? `${latest.bodyFat.toFixed(1)}%`
-          : '---';
-
-
-      document.getElementById('bmi').textContent =
-        validNumber(latest.bmi)
-          ? latest.bmi.toFixed(1)
-          : '---';
+    `;
+  });
 
 
-      document.getElementById('lbm').textContent =
-        validNumber(latest.lbm)
-          ? `${latest.lbm.toFixed(1)} kg`
-          : '---';
+  svg += '</svg>';
 
 
-      document.getElementById('body-date').textContent =
-        `Latest measurement: ${formatDate(latest.date)}`;
+  container.innerHTML = svg;
+}
 
 
 
-      /*
-       * Current Month
-       *
-       * Use the month of the latest available measurement.
-       * This avoids an empty chart if the dashboard is opened
-       * before today's measurement has been synced.
-       */
+fetch(DATA_URL, { cache: 'no-store' })
 
-      const currentMonth =
-        latest.date.slice(0,7);
+  .then(response => {
+
+    if (!response.ok) {
+      throw new Error(
+        'Unable to load health data'
+      );
+    }
+
+    return response.json();
+
+  })
 
 
-      const monthlyRecords =
-        records.filter(record =>
-          record.date.startsWith(currentMonth)
+  .then(data => {
+
+    if (
+      !Array.isArray(data.records) ||
+      data.records.length === 0
+    ) {
+
+      throw new Error(
+        'No health records'
+      );
+    }
+
+
+    const records =
+      data.records
+        .filter(record => record.date)
+        .sort((a, b) =>
+          a.date.localeCompare(b.date)
         );
 
 
-      const [year, month] =
-        currentMonth.split('-');
+    /*
+     * Latest Body Record
+     */
+
+    const latest =
+      records[records.length - 1];
 
 
-      document.getElementById('month-label').textContent =
-        `${year}/${month} daily records`;
+    document.getElementById(
+      'weight'
+    ).textContent =
+      validNumber(latest.weight)
+        ? `${latest.weight.toFixed(1)} kg`
+        : '---';
 
 
-      createLineChart(
-        'weight-chart',
-        monthlyRecords,
-        'weight',
-        ' kg'
+    document.getElementById(
+      'body-fat'
+    ).textContent =
+      validNumber(latest.bodyFat)
+        ? `${latest.bodyFat.toFixed(1)}%`
+        : '---';
+
+
+    document.getElementById(
+      'bmi'
+    ).textContent =
+      validNumber(latest.bmi)
+        ? latest.bmi.toFixed(1)
+        : '---';
+
+
+    document.getElementById(
+      'lbm'
+    ).textContent =
+      validNumber(latest.lbm)
+        ? `${latest.lbm.toFixed(1)} kg`
+        : '---';
+
+
+    document.getElementById(
+      'body-date'
+    ).textContent =
+      `Latest measurement: ${formatDate(latest.date)}`;
+
+
+
+    /*
+     * Latest available month
+     */
+
+    const currentMonth =
+      latest.date.slice(0,7);
+
+
+    const monthlyRecords =
+      records.filter(record =>
+        record.date.startsWith(
+          currentMonth
+        )
       );
 
 
-      createLineChart(
-        'bodyfat-chart',
-        monthlyRecords,
-        'bodyFat',
-        '%'
-      );
+    const [year, month] =
+      currentMonth.split('-');
 
 
-      /*
-       * Steps
-       *
-       * Current JSON does not contain Steps yet.
-       * Keep the card ready for future integration.
-       */
-
-      document.getElementById('steps').textContent =
-        '---';
-
-    })
+    document.getElementById(
+      'month-label'
+    ).textContent =
+      `${year}/${month} daily records`;
 
 
-    .catch(error => {
+    createCombinedChart(
+      monthlyRecords
+    );
 
-      console.error(error);
 
-      document.getElementById(
-        'error-message'
-      ).style.display = 'block';
+    /*
+     * Steps will be connected later
+     */
 
-    });
+    document.getElementById(
+      'steps'
+    ).textContent = '---';
+
+  })
+
+
+  .catch(error => {
+
+    console.error(error);
+
+    document.getElementById(
+      'error-message'
+    ).style.display = 'block';
+
+  });
 
 </script>
 
