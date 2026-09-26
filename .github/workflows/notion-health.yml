@@ -20,6 +20,7 @@ jobs:
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           DATA_SOURCE_ID: ${{ vars.NOTION_HEALTH_DATA_SOURCE_ID }}
+          STEPS_DATA_SOURCE_ID: ${{ vars.NOTION_STEPS_DATA_SOURCE_ID }}
         run: |
           mkdir -p data
 
@@ -29,9 +30,8 @@ jobs:
           import urllib.request
 
           token = os.environ["NOTION_TOKEN"]
-          data_source_id = os.environ["DATA_SOURCE_ID"]
-
-          url = f"https://api.notion.com/v1/data_sources/{data_source_id}/query"
+          body_data_source_id = os.environ["DATA_SOURCE_ID"]
+          steps_data_source_id = os.environ["STEPS_DATA_SOURCE_ID"]
 
           headers = {
               "Authorization": f"Bearer {token}",
@@ -39,31 +39,35 @@ jobs:
               "Content-Type": "application/json",
           }
 
-          raw_records = []
-          cursor = None
+          def fetch_notion_records(data_source_id):
+              url = f"https://api.notion.com/v1/data_sources/{data_source_id}/query"
+              raw_records = []
+              cursor = None
 
-          while True:
-              body = {"page_size": 100}
+              while True:
+                  body = {"page_size": 100}
 
-              if cursor:
-                  body["start_cursor"] = cursor
+                  if cursor:
+                      body["start_cursor"] = cursor
 
-              request = urllib.request.Request(
-                  url,
-                  data=json.dumps(body).encode("utf-8"),
-                  headers=headers,
-                  method="POST",
-              )
+                  request = urllib.request.Request(
+                      url,
+                      data=json.dumps(body).encode("utf-8"),
+                      headers=headers,
+                      method="POST",
+                  )
 
-              with urllib.request.urlopen(request) as response:
-                  payload = json.load(response)
+                  with urllib.request.urlopen(request) as response:
+                      payload = json.load(response)
 
-              raw_records.extend(payload.get("results", []))
+                  raw_records.extend(payload.get("results", []))
 
-              if not payload.get("has_more"):
-                  break
+                  if not payload.get("has_more"):
+                      break
 
-              cursor = payload.get("next_cursor")
+                  cursor = payload.get("next_cursor")
+
+              return raw_records
 
           def get_number(prop):
               return prop.get("number")
@@ -72,9 +76,15 @@ jobs:
               value = prop.get("date")
               return value.get("start") if value else None
 
+
+          # -------------------------
+          # Body Records
+          # -------------------------
+
+          raw_body_records = fetch_notion_records(body_data_source_id)
           records = []
 
-          for page in raw_records:
+          for page in raw_body_records:
               props = page.get("properties", {})
 
               date = get_date(props.get("Measured Date", {}))
@@ -96,15 +106,47 @@ jobs:
 
           records.sort(key=lambda x: x.get("date") or "")
 
+
+          # -------------------------
+          # Steps Records
+          # -------------------------
+
+          raw_steps_records = fetch_notion_records(steps_data_source_id)
+          steps_records = []
+
+          for page in raw_steps_records:
+              props = page.get("properties", {})
+
+              date = get_date(props.get("Measured Date", {}))
+              steps = get_number(props.get("Steps", {}))
+
+              if date:
+                  date = date[:10]
+
+              steps_records.append({
+                  "date": date,
+                  "steps": steps
+              })
+
+          steps_records.sort(key=lambda x: x.get("date") or "")
+
+
+          # -------------------------
+          # Output
+          # -------------------------
+
           output = {
               "recordCount": len(records),
-              "records": records
+              "records": records,
+              "stepsRecordCount": len(steps_records),
+              "stepsRecords": steps_records
           }
 
           with open("data/health-data.json", "w", encoding="utf-8") as f:
               json.dump(output, f, ensure_ascii=False, indent=2)
 
-          print(f"Formatted {len(records)} health records.")
+          print(f"Formatted {len(records)} body records.")
+          print(f"Formatted {len(steps_records)} steps records.")
           PY
 
       - name: Commit Health data
