@@ -6,9 +6,7 @@
   <title>Health Dashboard</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -23,22 +21,15 @@
       padding: 40px 20px;
     }
 
-    h1 {
-      margin-bottom: 5px;
-    }
-
-    h2 {
-      margin-bottom: 6px;
-    }
+    h1 { margin-bottom: 5px; }
+    h2 { margin-bottom: 6px; }
 
     .subtitle {
       color: #6b7280;
       margin-bottom: 30px;
     }
 
-    .section {
-      margin-top: 38px;
-    }
+    .section { margin-top: 38px; }
 
     .section-subtitle {
       color: #6b7280;
@@ -59,9 +50,7 @@
       box-shadow: 0 4px 15px rgba(0,0,0,0.06);
     }
 
-    .icon {
-      font-size: 28px;
-    }
+    .icon { font-size: 28px; }
 
     .label {
       color: #6b7280;
@@ -125,7 +114,6 @@
 
     .legend-line {
       width: 18px;
-      height: 0;
       border-top: 3px solid #374151;
     }
 
@@ -171,6 +159,38 @@
       stroke-width: 2;
     }
 
+    .hover-line {
+      stroke: #9ca3af;
+      stroke-width: 1;
+      stroke-dasharray: 4 4;
+      pointer-events: none;
+    }
+
+    .hover-zone {
+      fill: transparent;
+      cursor: crosshair;
+    }
+
+    .tooltip {
+      position: absolute;
+      display: none;
+      pointer-events: none;
+      background: #111827;
+      color: white;
+      padding: 10px 12px;
+      border-radius: 9px;
+      font-size: 13px;
+      line-height: 1.5;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.18);
+      z-index: 10;
+      white-space: nowrap;
+    }
+
+    .tooltip-date {
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+
     .empty {
       color: #9ca3af;
       display: flex;
@@ -188,22 +208,12 @@
       display: none;
     }
 
-    a {
-      color: #374151;
-    }
+    a { color: #374151; }
 
     @media (max-width: 600px) {
-      .container {
-        padding: 25px 15px;
-      }
-
-      .value {
-        font-size: 26px;
-      }
-
-      .chart-wrapper {
-        height: 300px;
-      }
+      .container { padding: 25px 15px; }
+      .value { font-size: 26px; }
+      .chart-wrapper { height: 300px; }
     }
   </style>
 </head>
@@ -217,14 +227,10 @@
   <h1>Health Dashboard</h1>
   <div class="subtitle">Daily health & fitness overview</div>
 
-
-  <!-- Daily Activity -->
-
   <div class="section">
     <h2>Daily Activity</h2>
 
     <div class="cards">
-
       <div class="card">
         <div class="icon">🚶</div>
         <div class="label">Steps</div>
@@ -245,12 +251,8 @@
         <div class="value">40 min</div>
         <div class="goal">Goal: 2× / week</div>
       </div>
-
     </div>
   </div>
-
-
-  <!-- Body Record -->
 
   <div class="section">
     <h2>Body Record</h2>
@@ -260,7 +262,6 @@
     </div>
 
     <div class="cards">
-
       <div class="card">
         <div class="icon">⚖️</div>
         <div class="label">Weight</div>
@@ -288,15 +289,10 @@
         <div class="value" id="lbm">---</div>
         <div class="goal">Lean body mass</div>
       </div>
-
     </div>
   </div>
 
-
-  <!-- Monthly Activity -->
-
   <div class="section">
-
     <h2>Monthly Activity</h2>
 
     <div class="section-subtitle" id="month-label">
@@ -304,15 +300,10 @@
     </div>
 
     <div class="chart-card">
-
       <div class="chart-header">
-
-        <div class="chart-title">
-          Weight & Body Fat
-        </div>
+        <div class="chart-title">Weight & Body Fat</div>
 
         <div class="legend">
-
           <div class="legend-item">
             <span class="legend-bar"></span>
             Weight
@@ -322,20 +313,15 @@
             <span class="legend-line"></span>
             Body Fat
           </div>
-
         </div>
-
       </div>
 
-      <div
-        class="chart-wrapper"
-        id="monthly-chart">
+      <div class="chart-wrapper" id="chart-wrapper">
+        <div id="monthly-chart"></div>
+        <div class="tooltip" id="chart-tooltip"></div>
       </div>
-
     </div>
-
   </div>
-
 
   <div class="error" id="error-message">
     Unable to load health data.
@@ -343,35 +329,46 @@
 
 </div>
 
-
 <script>
 
 const DATA_URL = '../../data/health-data.json';
 
-
 function validNumber(value) {
-  return typeof value === 'number' &&
-         Number.isFinite(value);
+  return typeof value === 'number' && Number.isFinite(value);
 }
 
-
 function formatDate(dateString) {
-
   if (!dateString) return '---';
 
-  const [year, month, day] =
-    dateString.split('-');
-
+  const [year, month, day] = dateString.split('-');
   return `${year}/${month}/${day}`;
 }
 
+function formatTooltipDate(dateString) {
+  const [year, month, day] = dateString.split('-');
 
+  const date = new Date(
+    Number(year),
+    Number(month) - 1,
+    Number(day)
+  );
+
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric'
+  });
+}
 
 function createCombinedChart(records) {
 
   const container =
     document.getElementById('monthly-chart');
 
+  const tooltip =
+    document.getElementById('chart-tooltip');
+
+  const wrapper =
+    document.getElementById('chart-wrapper');
 
   const data =
     records.filter(record =>
@@ -380,15 +377,11 @@ function createCombinedChart(records) {
       validNumber(record.bodyFat)
     );
 
-
   if (!data.length) {
-
     container.innerHTML =
       '<div class="empty">No data for this month</div>';
-
     return;
   }
-
 
   const width = 950;
   const height = 300;
@@ -400,13 +393,11 @@ function createCombinedChart(records) {
     left: 65
   };
 
-
   const chartWidth =
     width - padding.left - padding.right;
 
   const chartHeight =
     height - padding.top - padding.bottom;
-
 
   const weights =
     data.map(record => record.weight);
@@ -414,20 +405,13 @@ function createCombinedChart(records) {
   const bodyFats =
     data.map(record => record.bodyFat);
 
-
-  /*
-   * Weight scale
-   */
-
   let weightMin = Math.min(...weights);
   let weightMax = Math.max(...weights);
 
   let weightRange =
     weightMax - weightMin;
 
-  if (weightRange === 0) {
-    weightRange = 1;
-  }
+  if (weightRange === 0) weightRange = 1;
 
   const weightMargin =
     Math.max(weightRange * 0.3, 0.5);
@@ -435,27 +419,19 @@ function createCombinedChart(records) {
   weightMin -= weightMargin;
   weightMax += weightMargin;
 
-
-  /*
-   * Body Fat scale
-   */
-
   let fatMin = Math.min(...bodyFats);
   let fatMax = Math.max(...bodyFats);
 
   let fatRange =
     fatMax - fatMin;
 
-  if (fatRange === 0) {
-    fatRange = 1;
-  }
+  if (fatRange === 0) fatRange = 1;
 
   const fatMargin =
     Math.max(fatRange * 0.3, 0.3);
 
   fatMin -= fatMargin;
   fatMax += fatMargin;
-
 
   const firstDate = data[0].date;
 
@@ -465,22 +441,17 @@ function createCombinedChart(records) {
   const month =
     Number(firstDate.slice(5,7));
 
-
   const daysInMonth =
     new Date(year, month, 0).getDate();
 
-
   function xPosition(day) {
-
     return padding.left +
       ((day - 1) /
       Math.max(daysInMonth - 1, 1)) *
       chartWidth;
   }
 
-
   function weightY(value) {
-
     return padding.top +
       (1 -
       (value - weightMin) /
@@ -488,9 +459,7 @@ function createCombinedChart(records) {
       chartHeight;
   }
 
-
   function fatY(value) {
-
     return padding.top +
       (1 -
       (value - fatMin) /
@@ -498,20 +467,14 @@ function createCombinedChart(records) {
       chartHeight;
   }
 
-
   let svg = `
     <svg
+      id="health-chart-svg"
       viewBox="0 0 ${width} ${height}"
       preserveAspectRatio="none">
   `;
 
-
-  /*
-   * Grid + left/right Y axes
-   */
-
   const gridCount = 4;
-
 
   for (let i = 0; i <= gridCount; i++) {
 
@@ -519,21 +482,17 @@ function createCombinedChart(records) {
       padding.top +
       (chartHeight / gridCount) * i;
 
-
     const weightValue =
       weightMax -
       ((weightMax - weightMin) /
       gridCount) * i;
-
 
     const fatValue =
       fatMax -
       ((fatMax - fatMin) /
       gridCount) * i;
 
-
     svg += `
-
       <line
         x1="${padding.left}"
         y1="${y}"
@@ -559,14 +518,8 @@ function createCombinedChart(records) {
       >
         ${fatValue.toFixed(1)}%
       </text>
-
     `;
   }
-
-
-  /*
-   * X axis labels
-   */
 
   const xLabels =
     [1, 5, 10, 15, 20, 25, daysInMonth]
@@ -575,13 +528,11 @@ function createCombinedChart(records) {
         array.indexOf(day) === index
       );
 
-
   xLabels.forEach(day => {
 
     const x = xPosition(day);
 
     svg += `
-
       <text
         x="${x}"
         y="${height - 10}"
@@ -590,14 +541,8 @@ function createCombinedChart(records) {
       >
         ${day}
       </text>
-
     `;
   });
-
-
-  /*
-   * Weight bars
-   */
 
   const barWidth =
     Math.max(
@@ -608,7 +553,6 @@ function createCombinedChart(records) {
         Math.max(daysInMonth, 1) * 0.65
       )
     );
-
 
   data.forEach(record => {
 
@@ -627,9 +571,7 @@ function createCombinedChart(records) {
     const barHeight =
       bottom - y;
 
-
     svg += `
-
       <rect
         x="${x - barWidth / 2}"
         y="${y}"
@@ -637,20 +579,9 @@ function createCombinedChart(records) {
         height="${barHeight}"
         rx="3"
         class="weight-bar"
-      >
-        <title>
-          ${record.date}
-          Weight: ${record.weight.toFixed(1)} kg
-        </title>
-      </rect>
-
+      />
     `;
   });
-
-
-  /*
-   * Body Fat line
-   */
 
   const fatPoints =
     data.map(record => {
@@ -661,12 +592,9 @@ function createCombinedChart(records) {
       return {
         x: xPosition(day),
         y: fatY(record.bodyFat),
-        value: record.bodyFat,
-        date: record.date
+        record: record
       };
-
     });
-
 
   const polylinePoints =
     fatPoints
@@ -675,43 +603,178 @@ function createCombinedChart(records) {
       )
       .join(' ');
 
-
   svg += `
-
     <polyline
       points="${polylinePoints}"
       class="bodyfat-line"
     />
-
   `;
-
 
   fatPoints.forEach(point => {
 
     svg += `
-
       <circle
         cx="${point.x}"
         cy="${point.y}"
         r="4"
         class="bodyfat-point"
-      >
-        <title>
-          ${point.date}
-          Body Fat: ${point.value.toFixed(1)}%
-        </title>
-      </circle>
-
+      />
     `;
   });
 
+  /*
+   * Invisible hover areas.
+   * Each measurement gets a wider target,
+   * so the mouse does not need to hit the point exactly.
+   */
+
+  data.forEach((record, index) => {
+
+    const day =
+      Number(record.date.slice(8,10));
+
+    const x =
+      xPosition(day);
+
+    const previousX =
+      index > 0
+        ? xPosition(
+            Number(data[index - 1].date.slice(8,10))
+          )
+        : padding.left;
+
+    const nextX =
+      index < data.length - 1
+        ? xPosition(
+            Number(data[index + 1].date.slice(8,10))
+          )
+        : width - padding.right;
+
+    const zoneStart =
+      index === 0
+        ? padding.left
+        : (previousX + x) / 2;
+
+    const zoneEnd =
+      index === data.length - 1
+        ? width - padding.right
+        : (x + nextX) / 2;
+
+    svg += `
+      <rect
+        class="hover-zone"
+        data-index="${index}"
+        x="${zoneStart}"
+        y="${padding.top}"
+        width="${zoneEnd - zoneStart}"
+        height="${chartHeight}"
+      />
+    `;
+  });
+
+  svg += `
+    <line
+      id="hover-line"
+      x1="0"
+      y1="${padding.top}"
+      x2="0"
+      y2="${padding.top + chartHeight}"
+      class="hover-line"
+      style="display:none"
+    />
+  `;
 
   svg += '</svg>';
 
-
   container.innerHTML = svg;
-}
 
+  const svgElement =
+    document.getElementById('health-chart-svg');
+
+  const hoverLine =
+    document.getElementById('hover-line');
+
+  const zones =
+    svgElement.querySelectorAll('.hover-zone');
+
+  zones.forEach(zone => {
+
+    zone.addEventListener('mouseenter', event => {
+
+      const index =
+        Number(zone.dataset.index);
+
+      const record =
+        data[index];
+
+      const day =
+        Number(record.date.slice(8,10));
+
+      const x =
+        xPosition(day);
+
+      hoverLine.setAttribute('x1', x);
+      hoverLine.setAttribute('x2', x);
+      hoverLine.style.display = 'block';
+
+      tooltip.innerHTML = `
+        <div class="tooltip-date">
+          ${formatTooltipDate(record.date)}
+        </div>
+        <div>
+          Weight: <strong>${record.weight.toFixed(1)} kg</strong>
+        </div>
+        <div>
+          Body Fat: <strong>${record.bodyFat.toFixed(1)}%</strong>
+        </div>
+      `;
+
+      tooltip.style.display = 'block';
+    });
+
+    zone.addEventListener('mousemove', event => {
+
+      const wrapperRect =
+        wrapper.getBoundingClientRect();
+
+      const tooltipWidth =
+        tooltip.offsetWidth;
+
+      let left =
+        event.clientX -
+        wrapperRect.left + 12;
+
+      let top =
+        event.clientY -
+        wrapperRect.top - 70;
+
+      if (
+        left + tooltipWidth >
+        wrapper.clientWidth
+      ) {
+        left =
+          event.clientX -
+          wrapperRect.left -
+          tooltipWidth - 12;
+      }
+
+      if (top < 5) {
+        top = 5;
+      }
+
+      tooltip.style.left =
+        `${left}px`;
+
+      tooltip.style.top =
+        `${top}px`;
+    });
+
+    zone.addEventListener('mouseleave', () => {
+      tooltip.style.display = 'none';
+      hoverLine.style.display = 'none';
+    });
+  });
+}
 
 
 fetch(DATA_URL, { cache: 'no-store' })
@@ -725,9 +788,7 @@ fetch(DATA_URL, { cache: 'no-store' })
     }
 
     return response.json();
-
   })
-
 
   .then(data => {
 
@@ -735,12 +796,10 @@ fetch(DATA_URL, { cache: 'no-store' })
       !Array.isArray(data.records) ||
       data.records.length === 0
     ) {
-
       throw new Error(
         'No health records'
       );
     }
-
 
     const records =
       data.records
@@ -749,95 +808,51 @@ fetch(DATA_URL, { cache: 'no-store' })
           a.date.localeCompare(b.date)
         );
 
-
-    /*
-     * Latest Body Record
-     */
-
     const latest =
       records[records.length - 1];
 
-
-    document.getElementById(
-      'weight'
-    ).textContent =
+    document.getElementById('weight').textContent =
       validNumber(latest.weight)
         ? `${latest.weight.toFixed(1)} kg`
         : '---';
 
-
-    document.getElementById(
-      'body-fat'
-    ).textContent =
+    document.getElementById('body-fat').textContent =
       validNumber(latest.bodyFat)
         ? `${latest.bodyFat.toFixed(1)}%`
         : '---';
 
-
-    document.getElementById(
-      'bmi'
-    ).textContent =
+    document.getElementById('bmi').textContent =
       validNumber(latest.bmi)
         ? latest.bmi.toFixed(1)
         : '---';
 
-
-    document.getElementById(
-      'lbm'
-    ).textContent =
+    document.getElementById('lbm').textContent =
       validNumber(latest.lbm)
         ? `${latest.lbm.toFixed(1)} kg`
         : '---';
 
-
-    document.getElementById(
-      'body-date'
-    ).textContent =
+    document.getElementById('body-date').textContent =
       `Latest measurement: ${formatDate(latest.date)}`;
-
-
-
-    /*
-     * Latest available month
-     */
 
     const currentMonth =
       latest.date.slice(0,7);
 
-
     const monthlyRecords =
       records.filter(record =>
-        record.date.startsWith(
-          currentMonth
-        )
+        record.date.startsWith(currentMonth)
       );
-
 
     const [year, month] =
       currentMonth.split('-');
 
-
-    document.getElementById(
-      'month-label'
-    ).textContent =
+    document.getElementById('month-label').textContent =
       `${year}/${month} daily records`;
 
+    createCombinedChart(monthlyRecords);
 
-    createCombinedChart(
-      monthlyRecords
-    );
-
-
-    /*
-     * Steps will be connected later
-     */
-
-    document.getElementById(
-      'steps'
-    ).textContent = '---';
-
+    document.getElementById('steps').textContent =
+      '---';
   })
-
 
   .catch(error => {
 
@@ -846,7 +861,6 @@ fetch(DATA_URL, { cache: 'no-store' })
     document.getElementById(
       'error-message'
     ).style.display = 'block';
-
   });
 
 </script>
