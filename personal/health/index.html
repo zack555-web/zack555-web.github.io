@@ -850,8 +850,34 @@ fetch(DATA_URL, { cache: 'no-store' })
 
     createCombinedChart(monthlyRecords);
 
-    document.getElementById('steps').textContent =
-      '---';
+
+    // Steps
+
+    const stepsRecords =
+      Array.isArray(data.stepsRecords)
+        ? data.stepsRecords
+            .filter(record =>
+              record.date &&
+              validNumber(record.steps)
+            )
+            .sort((a, b) =>
+              a.date.localeCompare(b.date)
+            )
+        : [];
+
+    if (stepsRecords.length > 0) {
+
+      const latestSteps =
+        stepsRecords[stepsRecords.length - 1];
+
+      document.getElementById('steps').textContent =
+        latestSteps.steps.toLocaleString();
+
+    } else {
+
+      document.getElementById('steps').textContent =
+        '---';
+    }
   })
 
   .catch(error => {
