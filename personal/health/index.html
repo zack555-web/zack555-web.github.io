@@ -874,7 +874,7 @@ function createStepsChart(records, month) {
   container.innerHTML = svg;
   const hoverLine = document.getElementById('steps-hover-line');
   container.querySelectorAll('.hover-zone').forEach(zone => {
-    zone.addEventListener('pointermove', event => {
+    const showTooltip = event => {
       const record = records[Number(zone.dataset.index)];
       hoverLine.setAttribute('x1', x(Number(record.date.slice(8))));
       hoverLine.setAttribute('x2', x(Number(record.date.slice(8))));
@@ -886,11 +886,27 @@ function createStepsChart(records, month) {
       if (left + tooltip.offsetWidth > wrapper.clientWidth) left = event.clientX - rect.left - tooltip.offsetWidth - 12;
       tooltip.style.left = `${Math.max(0, left) + wrapper.scrollLeft}px`;
       tooltip.style.top = `${Math.max(5, event.clientY - rect.top - 70)}px`;
+    };
+    // Touch pointers leave on finger release. Keep tap results visible until
+    // another tap or a scroll, while preserving mouse hover behavior.
+    zone.addEventListener('click', showTooltip);
+    zone.addEventListener('pointermove', event => {
+      if (event.pointerType === 'mouse') showTooltip(event);
     });
-    zone.addEventListener('pointerleave', () => {
+    zone.addEventListener('pointerleave', event => {
+      if (event.pointerType !== 'mouse') return;
       tooltip.style.display = 'none';
       hoverLine.style.display = 'none';
     });
+  });
+  wrapper.addEventListener('scroll', () => {
+    tooltip.style.display = 'none';
+    hoverLine.style.display = 'none';
+  });
+  document.addEventListener('click', event => {
+    if (wrapper.contains(event.target)) return;
+    tooltip.style.display = 'none';
+    hoverLine.style.display = 'none';
   });
 }
 
