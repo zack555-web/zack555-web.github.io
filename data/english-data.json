@@ -1,5 +1,5 @@
 {
-  "recordCount": 96,
+  "recordCount": 97,
   "records": [
     {
       "date": "2026-09-13",
@@ -576,6 +576,12 @@
       "practiceType": "Listening",
       "duration": 40,
       "session": "2026-10-10 - Listening"
+    },
+    {
+      "date": "2026-10-11",
+      "practiceType": "Listening",
+      "duration": 11,
+      "session": "2026-10-11 - Listening"
     }
   ]
 }
