@@ -1,5 +1,5 @@
 {
-  "recordCount": 120,
+  "recordCount": 123,
   "records": [
     {
       "date": "2026-09-13",
@@ -720,6 +720,24 @@
       "practiceType": "Listening",
       "duration": 34,
       "session": "2026-10-20 - Listening"
+    },
+    {
+      "date": "2026-10-21",
+      "practiceType": "Reading",
+      "duration": 29,
+      "session": "2026-10-21 - Reading"
+    },
+    {
+      "date": "2026-10-21",
+      "practiceType": "Free Conversation",
+      "duration": 9,
+      "session": "2026-10-21 - Free Conversation"
+    },
+    {
+      "date": "2026-10-21",
+      "practiceType": "Listening",
+      "duration": 60,
+      "session": "2026-10-21 - Listening"
     }
   ]
 }
