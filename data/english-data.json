@@ -1,5 +1,5 @@
 {
-  "recordCount": 130,
+  "recordCount": 134,
   "records": [
     {
       "date": "2026-09-13",
@@ -780,6 +780,30 @@
       "practiceType": "Listening",
       "duration": 15,
       "session": "2026-10-25 - Listening"
+    },
+    {
+      "date": "2026-10-26",
+      "practiceType": "NativeCamp",
+      "duration": 40,
+      "session": "2026-10-26 - NativeCamp"
+    },
+    {
+      "date": "2026-10-26",
+      "practiceType": "NativeCamp",
+      "duration": 15,
+      "session": "2026-10-26 - NativeCamp"
+    },
+    {
+      "date": "2026-10-26",
+      "practiceType": "Reading",
+      "duration": 55,
+      "session": "2026-10-26 - Reading"
+    },
+    {
+      "date": "2026-10-26",
+      "practiceType": "Listening",
+      "duration": 16,
+      "session": "2026-10-26 - Listening"
     }
   ]
 }
