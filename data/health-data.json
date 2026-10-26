@@ -1073,7 +1073,7 @@
       "lbm": 55.8
     }
   ],
-  "stepsRecordCount": 374,
+  "stepsRecordCount": 375,
   "stepsRecords": [
     {
       "date": "2025-10-15",
@@ -2570,6 +2570,10 @@
     {
       "date": "2026-10-24",
       "steps": 10707
+    },
+    {
+      "date": "2026-10-25",
+      "steps": 5116
     }
   ]
 }
