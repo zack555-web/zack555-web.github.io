@@ -1,5 +1,5 @@
 {
-  "recordCount": 160,
+  "recordCount": 161,
   "records": [
     {
       "date": "2025-10-15",
@@ -1120,9 +1120,16 @@
       "bodyFat": 23.3,
       "bmi": 25.9,
       "lbm": 56
+    },
+    {
+      "date": "2026-11-04",
+      "weight": 72.7,
+      "bodyFat": 22.9,
+      "bmi": 25.8,
+      "lbm": 56.1
     }
   ],
-  "stepsRecordCount": 384,
+  "stepsRecordCount": 385,
   "stepsRecords": [
     {
       "date": "2025-10-15",
@@ -2659,6 +2666,10 @@
     {
       "date": "2026-11-02",
       "steps": 11380
+    },
+    {
+      "date": "2026-11-03",
+      "steps": 6419
     }
   ]
 }
