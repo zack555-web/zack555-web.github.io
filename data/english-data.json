@@ -1,5 +1,5 @@
 {
-  "recordCount": 220,
+  "recordCount": 225,
   "records": [
     {
       "date": "2026-09-13",
@@ -1320,6 +1320,36 @@
       "practiceType": "Reading",
       "duration": 30,
       "session": "2026-11-27 - Reading"
+    },
+    {
+      "date": "2026-11-28",
+      "practiceType": "NativeCamp",
+      "duration": 25,
+      "session": "2026-11-28 - NativeCamp"
+    },
+    {
+      "date": "2026-11-28",
+      "practiceType": "Sentence Practice",
+      "duration": 21,
+      "session": "2026-11-28 - Sentence Practice"
+    },
+    {
+      "date": "2026-11-28",
+      "practiceType": "Sentence Practice",
+      "duration": 26,
+      "session": "2026-11-28 - Sentence Practice"
+    },
+    {
+      "date": "2026-11-28",
+      "practiceType": "Reading",
+      "duration": 43,
+      "session": "2026-11-28 - Reading"
+    },
+    {
+      "date": "2026-11-28",
+      "practiceType": "Listening",
+      "duration": 37,
+      "session": "2026-11-28 - Listening"
     }
   ]
 }
